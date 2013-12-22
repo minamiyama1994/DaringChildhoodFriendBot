@@ -44,26 +44,38 @@ namespace DaringChildhoodFriendBot
         {
             lock (t().Statuses)
             {
-                if (Regex.IsMatch(s.Text, @".*おはよう.*"))
+                try
                 {
-                    t().Statuses.Update(status => "@" + s.User.ScreenName + " おはようっ！", in_reply_to_status_id => s.Id);
+                    if (Regex.IsMatch(s.Text, @".*おはよう.*"))
+                    {
+                        t().Statuses.Update(status => "@" + s.User.ScreenName + " おはようっ！", in_reply_to_status_id => s.Id);
 
+                    }
+                    else if (Regex.IsMatch(s.Text, @".*はじめまして.*"))
+                    {
+                        t().Statuses.Update(status => "@" + s.User.ScreenName + " はじめまして！　かな？　なのかな？　はじめましてなのかな？　なにはともあれよろしくぅ！", in_reply_to_status_id => s.Id);
+
+                    }
+                    else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]?([+＋][+＋]))|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s*[cｃCＣ]\+\+)).*使.*"))
+                    {
+                        t().Statuses.Update(status => "@" + s.User.ScreenName + " えっ何Visual C++なんか使ってんの！？　わかった今からバールのようなものを持ってくるからそこでおとなしく待っててね！", in_reply_to_status_id => s.Id);
+                    }
+                    else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]?([+＋][+＋]))|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s+[cｃCＣ]\+\+)).*"))
+                    {
+                        t().Statuses.Update(status => "@" + s.User.ScreenName + " アレはC++処理系じゃないからね！　Visual C++処理系だからね！　使うのは勝手だけどC++じゃないからね！　C++使うつもりだったら絶対に使っちゃダメだよ！", in_reply_to_status_id => s.Id);
+                    }
+                    else if (Regex.IsMatch(s.Text, @".*[cｃCＣ].*言語.*"))
+                    {
+                        t().Statuses.Update(status => "@" + s.User.ScreenName + " 上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！", in_reply_to_status_id => s.Id);
+                    }
+                    else
+                    {
+                        t().Statuses.Update(status => "@" + s.User.ScreenName + " 何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！", in_reply_to_status_id => s.Id);
+                    }
                 }
-                else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]?([+＋][+＋]))|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s+[cｃCＣ]\+\+)).*使.*"))
+                catch (Exception e)
                 {
-                    t().Statuses.Update(status => "@" + s.User.ScreenName + " えっ何Visual C++なんか使ってんの！？　わかった今からバールのようなものを持ってくるからそこでおとなしく待っててね！", in_reply_to_status_id => s.Id);
-                }
-                else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]?([+＋][+＋]))|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s+[cｃCＣ]\+\+)).*"))
-                {
-                    t().Statuses.Update(status => "@" + s.User.ScreenName + " アレはC++処理系じゃないからね！　Visual C++処理系だからね！　使うのは勝手だけどC++じゃないからね！　C++使うつもりだったら絶対に使っちゃダメだよ！", in_reply_to_status_id => s.Id);
-                }
-                else if (Regex.IsMatch(s.Text, @".*[cｃCＣ].*言語.*"))
-                {
-                    t().Statuses.Update(status => "@" + s.User.ScreenName + " 上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！", in_reply_to_status_id => s.Id);
-                }
-                else
-                {
-                    t().Statuses.Update(status => "@" + s.User.ScreenName + " 何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！", in_reply_to_status_id => s.Id);
+                    Console.WriteLine(e.StackTrace);
                 }
             }
         }
