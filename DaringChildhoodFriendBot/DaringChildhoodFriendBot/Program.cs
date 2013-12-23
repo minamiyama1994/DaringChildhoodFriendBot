@@ -23,7 +23,7 @@ namespace DaringChildhoodFriendBot
         {
             new string [ ]
             {
-                "あたしはもう寝るからな！　絶対に寝るんだからな！　嘘じゃないぞ詐欺じゃないぞ寝るからな！　昨日という日はもう終わってスコープは閉じたんだからデストラクタが呼ばれてあたしというリソースを開放するのは当たり前だろ！　あんたは何故か外部から参照されてるshared_ptrみたいだがな！" ,
+                "あたしはもう寝るからな！　寝るんだからな！　嘘じゃないぞ詐欺じゃないぞ寝るからな！　昨日という日はもう終わってスコープは閉じたんだからデストラクタが呼ばれてあたしというリソースを開放するのは当たり前だろ！　あんたは何故か外部から参照されてるshared_ptrみたいだがな！" ,
             } ,
             new string [ ]
             {
@@ -221,12 +221,9 @@ namespace DaringChildhoodFriendBot
                 {
                     Console.WriteLine("Tweet.");
                     Console.WriteLine(tweet_table[now_hour][random.Next(0, tweet_table[now_hour].Length)]);
-                    t().Statuses.Update(status => tweet_table[now_hour]);
+                    t().Statuses.Update(status => tweet_table[now_hour][random.Next(0, tweet_table[now_hour].Length)]);
                     ++now_hour;
-                    if (now_hour == 24)
-                    {
-                        now_hour = 0;
-                    }
+                    now_hour %= 24;
                 }
                 catch (Exception ex)
                 {
