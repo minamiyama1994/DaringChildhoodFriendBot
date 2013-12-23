@@ -13,45 +13,38 @@ namespace DaringChildhoodFriendBot
 {
     class Program
     {
-        private static readonly XmlSerializer x = new XmlSerializer(typeof(Tokens));
-        private static Tokens res = null;
-        private static System.Timers.Timer start_timer;
-        private static System.Timers.Timer tweet_timer;
-        private static int now_hour;
-        private static Random random = new Random();
-        private static Tokens t()
+        static Tokens _tokens;
+        static Tokens tokens
         {
-            if (res == null)
+            get
             {
-                if (File.Exists("bot.xml"))
+                var x = new XmlSerializer(typeof(Tokens));
+                if (_tokens == null)
                 {
-                    using (var y = File.OpenRead("bot.xml"))
+                    if (File.Exists("bot.xml"))
+                        using (var y = File.OpenRead("bot.xml"))
+                            _tokens = (Tokens)x.Deserialize(y);
+                    else
                     {
-                        res = (Tokens)x.Deserialize(y);
+                        var se = OAuth.Authorize("xRXCNtYCXmRX5J8Cwtj9RA", "PEKcPY3gGjERFJOar5aF0yLVH9LFf3WerSevze4a5Y");
+                        Console.WriteLine(se.AuthorizeUri);
+                        Console.Write("pin> ");
+                        _tokens = OAuth.GetTokens(Console.ReadLine(), se);
+                        using (var y = File.Open("bot.xml", FileMode.OpenOrCreate, FileAccess.Write))
+                            x.Serialize(y, _tokens);
                     }
                 }
-                else
-                {
-                    var se = OAuth.Authorize("xRXCNtYCXmRX5J8Cwtj9RA", "PEKcPY3gGjERFJOar5aF0yLVH9LFf3WerSevze4a5Y");
-                    Console.WriteLine(se.AuthorizeUri);
-                    Console.Write("pin> ");
-                    var g = OAuth.GetTokens(Console.ReadLine(), se);
-                    using (var y = File.Open("bot.xml", FileMode.OpenOrCreate, FileAccess.Write))
-                    {
-                        x.Serialize(y, g);
-                    }
-                    res = g;
-                }
+                return _tokens;
             }
-            return res;
         }
-        private static void parse(Status s)
+
+        static void parse(Status s)
         {
-            lock (t().Statuses)
+            lock (tokens.Statuses)
             {
                 try
                 {
-                    string tweet = "@" + s.User.ScreenName;
+                    var tweet = "@" + s.User.ScreenName;
                     if (Regex.IsMatch(s.Text, @".*おはよう.*"))
                     {
                         tweet += " おはようっ！";
@@ -78,7 +71,7 @@ namespace DaringChildhoodFriendBot
                     }
                     Console.WriteLine("Tweet.");
                     Console.WriteLine(tweet);
-                    t().Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
+                    tokens.Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
                 }
                 catch (Exception e)
                 {
@@ -86,7 +79,8 @@ namespace DaringChildhoodFriendBot
                 }
             }
         }
-        private static void reply(Status s)
+
+        static void reply(Status s)
         {
             try
             {
@@ -97,26 +91,28 @@ namespace DaringChildhoodFriendBot
                 Console.WriteLine(e);
             }
         }
-        private static void reply_thread()
+
+        static void reply_thread()
         {
             try
             {
-                foreach (var m in t().Streaming.StartStream(new StreamingParameters(track => "@" + t().Account.VerifyCredentials().ScreenName), StreamingType.Public))
-                {
+                foreach (var m in tokens.Streaming.StartStream(new StreamingParameters(track => "@" + tokens.Account.VerifyCredentials().ScreenName), StreamingType.Public))
                     if (m is StatusMessage)
-                    {
                         reply(((StatusMessage)m).Status);
-                    }
-                }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
         }
-        private static void on_tweet(object source, ElapsedEventArgs e)
+
+        static System.Timers.Timer start_timer;
+        static System.Timers.Timer tweet_timer;
+        static int now_hour;
+
+        static void on_tweet(object source, ElapsedEventArgs e)
         {
-            lock (t().Statuses)
+            lock (tokens.Statuses)
             {
                 try
                 {
@@ -126,9 +122,10 @@ namespace DaringChildhoodFriendBot
                     {
                         auto_tweet_table = (string[][])x_.Deserialize(y);
                     }
+                    var random = new Random();
                     Console.WriteLine("Tweet.");
                     Console.WriteLine(auto_tweet_table[now_hour][random.Next(0, auto_tweet_table[now_hour].Length)]);
-                    t().Statuses.Update(status => auto_tweet_table[now_hour][random.Next(0, auto_tweet_table[now_hour].Length)]);
+                    tokens.Statuses.Update(status => auto_tweet_table[now_hour][random.Next(0, auto_tweet_table[now_hour].Length)]);
                     ++now_hour;
                     now_hour %= 24;
                 }
@@ -138,37 +135,38 @@ namespace DaringChildhoodFriendBot
                 }
             }
         }
-        private static void on_tweet_init(object source, ElapsedEventArgs e)
+
+        static void on_tweet_init(object source, ElapsedEventArgs e)
         {
             tweet_timer = new System.Timers.Timer();
-            tweet_timer.Elapsed += new ElapsedEventHandler(on_tweet);
+            tweet_timer.Elapsed += on_tweet;
             tweet_timer.AutoReset = true;
             tweet_timer.Interval = 60 * 60 * 1000;
             tweet_timer.Enabled = true;
             var current_event = new System.Timers.Timer();
-            current_event.Elapsed += new ElapsedEventHandler(on_tweet);
+            current_event.Elapsed += on_tweet;
             current_event.AutoReset = false;
             current_event.Interval = 1000;
             current_event.Enabled = true;
         }
-        private static void tweet_thread()
+
+        static void tweet_thread()
         {
             Console.WriteLine("Auto Tweet Init.");
             start_timer = new System.Timers.Timer();
-            start_timer.Elapsed += new ElapsedEventHandler(on_tweet_init);
+            start_timer.Elapsed += on_tweet_init;
             start_timer.AutoReset = false;
-            var now = DateTime.Now;
-            var tmp_next_time = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0);
-            var next_time = tmp_next_time + new TimeSpan(1, 0, 0);
-            start_timer.Interval = (next_time - now).TotalMilliseconds;
+            var next_time = DateTime.Now.Date + new TimeSpan(DateTime.Now.Hour + 1, 0, 0);
+            start_timer.Interval = (next_time - DateTime.Now).TotalMilliseconds;
             start_timer.Enabled = true;
             now_hour = next_time.Hour;
-            Console.WriteLine("Duration of first auto tweet is {0}min.", (next_time - now).Minutes);
+            Console.WriteLine("Duration of first auto tweet is {0}min.", (next_time - DateTime.Now).Minutes);
             Console.WriteLine("First auto tweet is {0}hr.", now_hour);
         }
+
         static void Main(string[] args)
         {
-            t();
+            var _ = tokens;
             Thread rt = new Thread(new ThreadStart(reply_thread));
             tweet_thread();
             rt.Start();
