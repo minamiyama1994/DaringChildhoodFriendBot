@@ -2,15 +2,15 @@
 
 ## 概要
 
-C++erの破天荒な幼馴染です
+C++erの破天荒な幼馴染(https://twitter.com/FriendOfCpper)です
 楽しく会話したりぶっ飛んだことをしたりC++で殴ってきたりします
 仲良くして下さい
 
 ## お願い
 
 随時セリフを募集しています
-https://github.com/minamiyama1994/DaringChildhoodFriendBot/blob/master/words.txt
-にpullreqを出していただければ追加します
+https://github.com/minamiyama1994/DaringChildhoodFriendBot/blob/master/DaringChildhoodFriendBot/DaringChildhoodFriendBot/bin/Debug/reply_tweet.xml
+にpullreqを出していただければ対応します
 Issueでもいいです
 よろしくお願いします
 
