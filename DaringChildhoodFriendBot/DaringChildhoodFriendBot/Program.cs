@@ -51,30 +51,20 @@ namespace DaringChildhoodFriendBot
             {
                 try
                 {
-                    string tweet = "@" + s.User.ScreenName;
-                    if (Regex.IsMatch(s.Text, @".*おはよう.*"))
+                    string[][] reply_tweet_table;
+                    var x_ = new XmlSerializer(typeof(string[][]));
+                    using (var y = File.OpenRead("reply_tweet.xml"))
                     {
-                        tweet += " おはようっ！";
+                        reply_tweet_table = (string[][])x_.Deserialize(y);
                     }
-                    else if (Regex.IsMatch(s.Text, @".*はじめまして.*"))
+                    string tweet = "@" + s.User.ScreenName + " ";
+                    foreach ( var set in reply_tweet_table)
                     {
-                        tweet += " はじめまして！　かな？　なのかな？　はじめましてなのかな？　なにはともあれよろしくぅ！";
-                    }
-                    else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s*[cｃCＣ]\+\+)).*使.*"))
-                    {
-                        tweet += " えっ何Visual C++なんか使ってんの！？　わかった今からバールのようなものを持ってくるからそこでおとなしく待っててね！";
-                    }
-                    else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s+[cｃCＣ]\+\+)).*"))
-                    {
-                        tweet += " アレはC++処理系じゃないからね！　Visual C++処理系だからね！　使うのは勝手だけどC++じゃないからね！　C++使うつもりだったら絶対に使っちゃダメだよ！";
-                    }
-                    else if (Regex.IsMatch(s.Text, @".*[cｃCＣ].*言語.*"))
-                    {
-                        tweet += " 上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！";
-                    }
-                    else
-                    {
-                        tweet += " 何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！";
+                        if ( Regex.IsMatch ( set [ 0 ] , s.Text))
+                        {
+                            tweet += set[1];
+                            break;
+                        }
                     }
                     Console.WriteLine("Tweet.");
                     Console.WriteLine(tweet);
@@ -168,10 +158,45 @@ namespace DaringChildhoodFriendBot
         }
         static void Main(string[] args)
         {
+            /*
             t();
             Thread rt = new Thread(new ThreadStart(reply_thread));
             tweet_thread();
             rt.Start();
+             */
+
+            string[][] table =
+                    {
+                        new string [ ] {
+                            @".*おはよう.*" ,
+                            "おはようっ！"
+                        } ,
+                        new string [ ] {
+                            @".*はじめまして.*" ,
+                            "はじめまして！　かな？　なのかな？　はじめましてなのかな？　なにはともあれよろしくぅ！"
+                        },
+                        new string [ ] {
+                            @".*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s*[cｃCＣ]\+\+)).*使.*" ,
+                            "えっ何Visual C++なんか使ってんの！？　わかった今からバールのようなものを持ってくるからそこでおとなしく待っててね！"
+                        } ,
+                        new string [ ] {
+                            @".*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s+[cｃCＣ]\+\+)).*" ,
+                            "アレはC++処理系じゃないからね！　Visual C++処理系だからね！　使うのは勝手だけどC++じゃないからね！　C++使うつもりだったら絶対に使っちゃダメだよ！"
+                        } ,
+                        new string [ ] {
+                            @".*[cｃCＣ].*言語.*" ,
+                            "上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！"
+                        } ,
+                        new string [ ] {
+                            @".*" ,
+                            "何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！"
+                        } ,
+                    };
+            var x_ = new XmlSerializer(typeof(string[][]));
+            using (var y = File.Open("reply_tweet.xml", FileMode.OpenOrCreate, FileAccess.Write))
+            {
+                x_.Serialize(y, table);
+            }
         }
     }
 }
