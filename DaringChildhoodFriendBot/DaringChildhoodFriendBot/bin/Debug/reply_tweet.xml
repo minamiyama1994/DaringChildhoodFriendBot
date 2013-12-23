@@ -21,6 +21,10 @@
     <string>上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！</string>
   </ArrayOfString>
   <ArrayOfString>
+    <string>.*ちょまど.*</string>
+    <string>ちょまどお姉さま!</string>
+  </ArrayOfString>
+  <ArrayOfString>
     <string>.*</string>
     <string>何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！</string>
   </ArrayOfString>

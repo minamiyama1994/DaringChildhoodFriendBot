@@ -50,9 +50,9 @@ namespace DaringChildhoodFriendBot
                         reply_tweet_table = (string[][])x_.Deserialize(y);
                     }
                     string tweet = "@" + s.User.ScreenName + " ";
-                    foreach ( var set in reply_tweet_table)
+                    foreach (var set in reply_tweet_table)
                     {
-                        if ( Regex.IsMatch ( set [ 0 ] , s.Text))
+                        if (Regex.IsMatch(set[0], s.Text)&&s.RetweetCount==0)
                         {
                             tweet += set[1];
                             break;
