@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<ArrayOfArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ArrayOfString>
+    <string>.*おはよう.*</string>
+    <string>おはようっ！</string>
+  </ArrayOfString>
+  <ArrayOfString>
+    <string>.*はじめまして.*</string>
+    <string>はじめまして！　かな？　なのかな？　はじめましてなのかな？　なにはともあれよろしくぅ！</string>
+  </ArrayOfString>
+  <ArrayOfString>
+    <string>.*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s*[cｃCＣ]\+\+)).*使.*</string>
+    <string>えっ何Visual C++なんか使ってんの！？　わかった今からバールのようなものを持ってくるからそこでおとなしく待っててね！</string>
+  </ArrayOfString>
+  <ArrayOfString>
+    <string>.*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s+[cｃCＣ]\+\+)).*</string>
+    <string>アレはC++処理系じゃないからね！　Visual C++処理系だからね！　使うのは勝手だけどC++じゃないからね！　C++使うつもりだったら絶対に使っちゃダメだよ！</string>
+  </ArrayOfString>
+  <ArrayOfString>
+    <string>.*[cｃCＣ].*言語.*</string>
+    <string>上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！</string>
+  </ArrayOfString>
+  <ArrayOfString>
+    <string>.*</string>
+    <string>何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！</string>
+  </ArrayOfString>
+</ArrayOfArrayOfString>
