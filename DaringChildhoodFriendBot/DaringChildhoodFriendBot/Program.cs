@@ -77,35 +77,38 @@ namespace DaringChildhoodFriendBot
             {
                 try
                 {
+                    string tweet = "@" + s.User.ScreenName;
                     if (Regex.IsMatch(s.Text, @".*おはよう.*"))
                     {
-                        t().Statuses.Update(status => "@" + s.User.ScreenName + " おはようっ！", in_reply_to_status_id => s.Id);
+                        tweet += " おはようっ！";
                     }
                     else if (Regex.IsMatch(s.Text, @".*はじめまして.*"))
                     {
-                        t().Statuses.Update(status => "@" + s.User.ScreenName + " はじめまして！　かな？　なのかな？　はじめましてなのかな？　なにはともあれよろしくぅ！", in_reply_to_status_id => s.Id);
-
+                        tweet += " はじめまして！　かな？　なのかな？　はじめましてなのかな？　なにはともあれよろしくぅ！";
                     }
                     else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s*[cｃCＣ]\+\+)).*使.*"))
                     {
-                        t().Statuses.Update(status => "@" + s.User.ScreenName + " えっ何Visual C++なんか使ってんの！？　わかった今からバールのようなものを持ってくるからそこでおとなしく待っててね！", in_reply_to_status_id => s.Id);
+                        tweet += " えっ何Visual C++なんか使ってんの！？　わかった今からバールのようなものを持ってくるからそこでおとなしく待っててね！";
                     }
                     else if (Regex.IsMatch(s.Text, @".*(([vｖVＶ][cｃCＣ]([+＋][+＋])?)|([vｖVＶ][iｉIＩ][sｓSＳ][uＵUＵ][aаAА][lｌLＬ]\s+[cｃCＣ]\+\+)).*"))
                     {
-                        t().Statuses.Update(status => "@" + s.User.ScreenName + " アレはC++処理系じゃないからね！　Visual C++処理系だからね！　使うのは勝手だけどC++じゃないからね！　C++使うつもりだったら絶対に使っちゃダメだよ！", in_reply_to_status_id => s.Id);
+                        tweet += " アレはC++処理系じゃないからね！　Visual C++処理系だからね！　使うのは勝手だけどC++じゃないからね！　C++使うつもりだったら絶対に使っちゃダメだよ！";
                     }
                     else if (Regex.IsMatch(s.Text, @".*[cｃCＣ].*言語.*"))
                     {
-                        t().Statuses.Update(status => "@" + s.User.ScreenName + " 上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！", in_reply_to_status_id => s.Id);
+                        tweet += " 上位互換性は保証されてないからね！　「CのコードはC++でも動くはず」なんてそんなことはないからね！　もしそんなこと思ってるならCでしか動かない邪悪なコードを見せてやるから！";
                     }
                     else
                     {
-                        t().Statuses.Update(status => "@" + s.User.ScreenName + " 何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！", in_reply_to_status_id => s.Id);
+                        tweet += " 何っ！？　呼んだ！？　ねえ今呼んだでしょなになになんの話聞かせて！";
                     }
+                    Console.WriteLine("Tweet.");
+                    Console.WriteLine(tweet);
+                    t().Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.StackTrace);
+                    Console.WriteLine(e);
                 }
             }
         }
@@ -117,7 +120,7 @@ namespace DaringChildhoodFriendBot
             }
             catch (Exception e)
             {
-                Console.WriteLine("err: failed to send at " + DateTime.Now.ToString() + ", to " + s.Id.ToString() + "\n" + e.ToString());
+                Console.WriteLine(e);
             }
         }
         private static void reply_thread()
@@ -134,43 +137,60 @@ namespace DaringChildhoodFriendBot
             }
             catch (Exception e)
             {
-                Console.WriteLine("err: lost connection");
-                throw;
+                Console.WriteLine(e);
             }
         }
         private static void on_tweet(object source, ElapsedEventArgs e)
         {
             lock (t().Statuses)
             {
-                if (tweet_table[now_hour] != null)
+                try
                 {
-                    t().Statuses.Update(status => tweet_table[now_hour]);
+                    if (tweet_table[now_hour] != null)
+                    {
+                        Console.WriteLine("Tweet.");
+                        Console.WriteLine(tweet_table[now_hour]);
+                        t().Statuses.Update(status => tweet_table[now_hour]);
+                    }
+                    ++now_hour;
+                    if (now_hour == 24)
+                    {
+                        now_hour = 0;
+                    }
                 }
-                ++now_hour;
-                if (now_hour == 24)
+                catch (Exception ex)
                 {
-                    now_hour = 0;
+                    Console.WriteLine(ex);
                 }
             }
         }
         private static void on_tweet_init(object source, ElapsedEventArgs e)
         {
             tweet_timer = new System.Timers.Timer();
-            tweet_timer.Enabled = true;
+            tweet_timer.Elapsed += new ElapsedEventHandler(on_tweet);
             tweet_timer.AutoReset = true;
             tweet_timer.Interval = 60 * 60 * 1000;
-            tweet_timer.Elapsed += new ElapsedEventHandler(on_tweet);
+            tweet_timer.Enabled = true;
+            var current_event = new System.Timers.Timer();
+            current_event.Elapsed += new ElapsedEventHandler(on_tweet);
+            current_event.AutoReset = false;
+            current_event.Interval = 1000;
+            current_event.Enabled = true;
         }
         private static void tweet_thread()
         {
+            Console.WriteLine("Auto Tweet Init.");
             start_timer = new System.Timers.Timer();
-            start_timer.Enabled = true;
+            start_timer.Elapsed += new ElapsedEventHandler(on_tweet_init);
             start_timer.AutoReset = false;
             var now = DateTime.Now;
-            var next_time = new DateTime(now.Year, now.Month, now.Day, now.Hour + 1, 0, 0);
-            start_timer.Interval = (next_time - now).Milliseconds;
-            start_timer.Elapsed += new ElapsedEventHandler(on_tweet_init);
+            var tmp_next_time = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0);
+            var next_time = tmp_next_time + new TimeSpan(1, 0, 0);
+            start_timer.Interval = (next_time - now).TotalMilliseconds;
+            start_timer.Enabled = true;
             now_hour = next_time.Hour;
+            Console.WriteLine("Duration of first auto tweet is {0}min.", (next_time - now).Minutes);
+            Console.WriteLine("First auto tweet is {0}hr.", now_hour);
         }
         static void Main(string[] args)
         {
