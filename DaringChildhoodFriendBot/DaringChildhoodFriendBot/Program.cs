@@ -52,7 +52,7 @@ namespace DaringChildhoodFriendBot
                     string tweet = "@" + s.User.ScreenName + " ";
                     foreach (var set in reply_tweet_table)
                     {
-                        if (Regex.IsMatch(set[0], s.Text)&&s.RetweetCount==0)
+                        if (Regex.IsMatch(s.Text, set[0]) && s.RetweetCount == 0)
                         {
                             tweet += set[1];
                             break;
