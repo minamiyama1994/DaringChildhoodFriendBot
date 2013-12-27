@@ -14,12 +14,12 @@ namespace DaringChildhoodFriendBot
 {
     class Program
     {
-        static T load < T > ( string path , T default_ )
+        static T load<T>(string path, T default_)
         {
             var x = new XmlSerializer(typeof(T));
-            if ( File.Exists(path))
+            if (File.Exists(path))
             {
-                using(var y = File.OpenRead ( path ))
+                using (var y = File.OpenRead(path))
                 {
                     return (T)x.Deserialize(y);
                 }
@@ -73,7 +73,7 @@ namespace DaringChildhoodFriendBot
             {
                 try
                 {
-                    List<List<string>> reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
+                    var reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
                     string tweet = "@" + s.User.ScreenName + " ";
                     foreach (var set in reply_tweet_table)
                     {
@@ -112,7 +112,7 @@ namespace DaringChildhoodFriendBot
                 {
                     if (m is StatusMessage)
                     {
-                        reply(((StatusMessage)m).Status);
+                        reply((m as StatusMessage).Status);
                     }
                 }
             }
