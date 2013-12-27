@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Timers;
+using System.Collections.Generic;
 using CoreTweet;
 using CoreTweet.Streaming;
 
@@ -13,11 +14,39 @@ namespace DaringChildhoodFriendBot
 {
     class Program
     {
-        static Tokens _tokens;
+        static T load < T > ( string path , T default_ )
+        {
+            var x = new XmlSerializer(typeof(T));
+            if ( File.Exists(path))
+            {
+                using(var y = File.OpenRead ( path ))
+                {
+                    return (T)x.Deserialize(y);
+                }
+            }
+            else
+            {
+                using (var y = File.OpenWrite(path))
+                {
+                    x.Serialize(y, default_);
+                    return default_;
+                }
+            }
+        }
+        static void save<T>(string path, T obj)
+        {
+            var x = new XmlSerializer(typeof(T));
+            using (var y = File.OpenWrite(path))
+            {
+                x.Serialize(y, obj);
+            }
+        }
         static Tokens tokens
         {
             get
             {
+                return load("bot.xml", new Tokens());
+                /*
                 var x = new XmlSerializer(typeof(Tokens));
                 if (_tokens == null)
                 {
@@ -35,6 +64,7 @@ namespace DaringChildhoodFriendBot
                     }
                 }
                 return _tokens;
+                 */
             }
         }
         static void parse(Status s)
@@ -43,12 +73,7 @@ namespace DaringChildhoodFriendBot
             {
                 try
                 {
-                    string[][] reply_tweet_table;
-                    var x_ = new XmlSerializer(typeof(string[][]));
-                    using (var y = File.OpenRead("reply_tweet.xml"))
-                    {
-                        reply_tweet_table = (string[][])x_.Deserialize(y);
-                    }
+                    List<List<string>> reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
                     string tweet = "@" + s.User.ScreenName + " ";
                     foreach (var set in reply_tweet_table)
                     {
@@ -84,8 +109,12 @@ namespace DaringChildhoodFriendBot
             try
             {
                 foreach (var m in tokens.Streaming.StartStream(new StreamingParameters(track => "@" + tokens.Account.VerifyCredentials().ScreenName), StreamingType.Public))
+                {
                     if (m is StatusMessage)
+                    {
                         reply(((StatusMessage)m).Status);
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -101,16 +130,16 @@ namespace DaringChildhoodFriendBot
             {
                 try
                 {
-                    string[][] auto_tweet_table;
-                    var x_ = new XmlSerializer(typeof(string[][]));
+                    var auto_tweet_table = load("auto_tweet.xml", new List<List<string>>());
+                    var x_ = new XmlSerializer(typeof(List<List<string>>));
                     using (var y = File.OpenRead("auto_tweet.xml"))
                     {
-                        auto_tweet_table = (string[][])x_.Deserialize(y);
+                        auto_tweet_table = (List<List<string>>)x_.Deserialize(y);
                     }
                     var random = new Random();
                     Console.WriteLine("Tweet.");
-                    Console.WriteLine(auto_tweet_table[now_hour][random.Next(0, auto_tweet_table[now_hour].Length)]);
-                    tokens.Statuses.Update(status => auto_tweet_table[now_hour][random.Next(0, auto_tweet_table[now_hour].Length)]);
+                    Console.WriteLine(auto_tweet_table[now_hour][random.Next(0, auto_tweet_table[now_hour].ToArray().Length)]);
+                    tokens.Statuses.Update(status => auto_tweet_table[now_hour][random.Next(0, auto_tweet_table[now_hour].ToArray().Length)]);
                     ++now_hour;
                     now_hour %= 24;
                 }
