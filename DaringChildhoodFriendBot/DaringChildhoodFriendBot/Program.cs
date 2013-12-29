@@ -9,12 +9,11 @@ using System.Timers;
 using System.Collections.Generic;
 using CoreTweet;
 using CoreTweet.Streaming;
-
 namespace DaringChildhoodFriendBot
 {
-    class Program
+    public class Program
     {
-        static T load<T>(string path, T default_)
+        private static T load<T>(string path, T default_)
         {
             var x = new XmlSerializer(typeof(T));
             if (File.Exists(path))
@@ -26,66 +25,115 @@ namespace DaringChildhoodFriendBot
             }
             else
             {
-                using (var y = File.OpenWrite(path))
-                {
-                    x.Serialize(y, default_);
-                    return default_;
-                }
+                save(path, default_);
+                return default_;
             }
         }
-        static void save<T>(string path, T obj)
+        private static void save<T>(string path, T obj)
         {
             var x = new XmlSerializer(typeof(T));
-            using (var y = File.OpenWrite(path))
+            File.Delete(path);
+            using (var y = File.Open(path,FileMode.Create))
             {
                 x.Serialize(y, obj);
             }
         }
-        static Tokens tokens
+        private static Tokens tokens_ = null;
+        private static Tokens tokens
         {
             get
             {
-                return load("bot.xml", new Tokens());
-                /*
-                var x = new XmlSerializer(typeof(Tokens));
-                if (_tokens == null)
+                if (tokens_ == null)
                 {
-                    if (File.Exists("bot.xml"))
-                        using (var y = File.OpenRead("bot.xml"))
-                            _tokens = (Tokens)x.Deserialize(y);
-                    else
-                    {
-                        var se = OAuth.Authorize("xRXCNtYCXmRX5J8Cwtj9RA", "PEKcPY3gGjERFJOar5aF0yLVH9LFf3WerSevze4a5Y");
-                        Console.WriteLine(se.AuthorizeUri);
-                        Console.Write("pin> ");
-                        _tokens = OAuth.GetTokens(Console.ReadLine(), se);
-                        using (var y = File.Open("bot.xml", FileMode.OpenOrCreate, FileAccess.Write))
-                            x.Serialize(y, _tokens);
-                    }
+                    tokens_ = load("bot.xml", new Tokens());
                 }
-                return _tokens;
-                 */
+                return tokens_;
             }
         }
-        static void parse(Status s)
+        [Serializable]
+        public class serializeable_pair<K,V>
+        {
+            public serializeable_pair()
+            {
+                key = default(K);
+                value = default(V);
+            }
+            public serializeable_pair ( KeyValuePair < K , V > kv)
+            {
+                key = kv.Key;
+                value = kv.Value;
+            }
+            public K key
+            {
+                get;
+                set;
+            }
+            public V value
+            {
+                get;
+                set;
+            }
+        }
+        private static void exec_command(Status s, string command)
+        {
+            var regex = new Regex(@"([0-9a-zA-Z_]+) (.*)$");
+            var match = regex.Match(command);
+            if (match.Success)
+            {
+                if (match.Groups[1].Value.Equals("register_call_name")) 
+                {
+                    var name_table = load("call_name.xml", new Dictionary<long, string>().Select(kv=>new serializeable_pair < long , string > ( kv )).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+                    if (name_table.ContainsKey((long)s.User.Id))
+                    {
+                        name_table.Remove((long)s.User.Id);
+                    }
+                    name_table.Add((long)s.User.Id, match.Groups[2].Value);
+                    save("call_name.xml", name_table.Select(kv=>new serializeable_pair < long , string > ( kv )).ToList());
+                    tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register your name : " + match.Groups[2].Value, in_reply_to_status_id => s.Id);
+                }
+            }
+        }
+        private static void parse(Status s)
         {
             lock (tokens.Statuses)
             {
                 try
                 {
-                    var reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
-                    string tweet = "@" + s.User.ScreenName + " ";
-                    foreach (var set in reply_tweet_table)
+                    var regex = new Regex(@"^@FriendOfCpper \[command\] (.*)$");
+                    var match = regex.Match(s.Text);
+                    if (match.Success)
                     {
-                        if (Regex.IsMatch(s.Text, set[0]) && s.RetweetCount == 0)
-                        {
-                            tweet += set[1];
-                            break;
-                        }
+                        exec_command(s, match.Groups[1].Value);
                     }
-                    Console.WriteLine("Tweet.");
-                    Console.WriteLine(tweet);
-                    tokens.Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
+                    else
+                    {
+                        var reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
+                        string tweet = "@" + s.User.ScreenName + " ";
+                        var name_table = new Dictionary<long, string>();
+                        name_table = load("call_name.xml", name_table.Select(kv=>new serializeable_pair<long,string>(kv)).ToArray()).ToDictionary(kv => kv.key, kv => kv.value);
+                        foreach (var set in reply_tweet_table)
+                        {
+                            if (Regex.IsMatch(s.Text, set[0]) && s.RetweetCount == 0)
+                            {
+                                var now = DateTime.Now;
+                                var add_str = set[1];
+                                add_str = add_str.Replace("#{挨拶}", Greeting[time_table[now.Hour]]);
+                                if (s.User.Id != null && name_table.ContainsKey((long)s.User.Id))
+                                {
+                                    add_str = add_str.Replace("#{名前}", name_table[(long)s.User.Id]);
+                                }
+                                else
+                                {
+                                    add_str = add_str.Replace("#{名前}", s.User.ScreenName);
+                                }
+                                tweet += add_str;
+                                break;
+                            }
+                        }
+                        Console.WriteLine("Tweet.");
+                        Console.WriteLine(tweet);
+                        tokens.Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -93,7 +141,7 @@ namespace DaringChildhoodFriendBot
                 }
             }
         }
-        static void reply(Status s)
+        private static void reply(Status s)
         {
             try
             {
@@ -104,11 +152,11 @@ namespace DaringChildhoodFriendBot
                 Console.WriteLine(e);
             }
         }
-        static void reply_thread()
+        private static void reply_thread()
         {
             try
             {
-                foreach (var m in tokens.Streaming.StartStream(new StreamingParameters(track => "@" + tokens.Account.VerifyCredentials().ScreenName), StreamingType.Public))
+                foreach (var m in tokens.Streaming.StartStream(StreamingType.Public, new StreamingParameters(track => "@" + tokens.Account.VerifyCredentials().ScreenName)))
                 {
                     if (m is StatusMessage)
                     {
@@ -121,10 +169,10 @@ namespace DaringChildhoodFriendBot
                 Console.WriteLine(e);
             }
         }
-        static System.Timers.Timer start_timer;
-        static System.Timers.Timer tweet_timer;
-        static int now_hour;
-        static void on_tweet(object source, ElapsedEventArgs e)
+        private static System.Timers.Timer start_timer;
+        private static System.Timers.Timer tweet_timer;
+        private static int now_hour;
+        private static void on_tweet(object source, ElapsedEventArgs e)
         {
             lock (tokens.Statuses)
             {
@@ -149,7 +197,7 @@ namespace DaringChildhoodFriendBot
                 }
             }
         }
-        static void on_tweet_init(object source, ElapsedEventArgs e)
+        private static void on_tweet_init(object source, ElapsedEventArgs e)
         {
             tweet_timer = new System.Timers.Timer();
             tweet_timer.Elapsed += on_tweet;
@@ -162,7 +210,7 @@ namespace DaringChildhoodFriendBot
             current_event.Interval = 1000;
             current_event.Enabled = true;
         }
-        static void tweet_thread()
+        private static void tweet_thread()
         {
             Console.WriteLine("Auto Tweet Init.");
             start_timer = new System.Timers.Timer();
@@ -175,7 +223,57 @@ namespace DaringChildhoodFriendBot
             Console.WriteLine("Duration of first auto tweet is {0}min.", (next_time - DateTime.Now).Minutes);
             Console.WriteLine("First auto tweet is {0}hr.", now_hour);
         }
-        static void Main(string[] args)
+        private enum time_traits
+        {
+            Morning,
+            Noon,
+            Evening,
+            Night,
+        }
+        private static time_traits[] time_table =
+        {
+            time_traits.Night,//0
+            time_traits.Night,//1
+            time_traits.Night,//2
+            time_traits.Night,//3
+            time_traits.Morning,//4
+            time_traits.Morning,//5
+            time_traits.Morning,//6     
+            time_traits.Morning,//7
+            time_traits.Morning,//8
+            time_traits.Morning,//9
+            time_traits.Morning,//10
+            time_traits.Noon,//11
+            time_traits.Noon,//12
+            time_traits.Noon,//13
+            time_traits.Noon,//14
+            time_traits.Noon,//15
+            time_traits.Evening,//16
+            time_traits.Evening,//17
+            time_traits.Evening,//18
+            time_traits.Night,//19
+            time_traits.Night,//20
+            time_traits.Night,//21
+            time_traits.Night,//22
+            time_traits.Night,//23
+        };
+        private static Dictionary<time_traits, string> Greeting_ = null;
+        private static Dictionary<time_traits, string> Greeting
+        {
+            get
+            {
+                if (Greeting_ == null)
+                {
+                    Greeting_ = new Dictionary<time_traits, string>();
+                    Greeting_.Add(time_traits.Morning, "おはよう");
+                    Greeting_.Add(time_traits.Noon, "こんにちは");
+                    Greeting_.Add(time_traits.Evening, "こんばんは");
+                    Greeting_.Add(time_traits.Night, "こんばんは");
+                }
+                return Greeting_;
+            }
+        }
+        private static void Main(string[] args)
         {
             var _ = tokens;
             Thread rt = new Thread(new ThreadStart(reply_thread));
