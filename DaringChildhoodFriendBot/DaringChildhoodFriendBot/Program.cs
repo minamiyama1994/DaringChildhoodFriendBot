@@ -69,53 +69,71 @@ namespace DaringChildhoodFriendBot
             {
                 if (match.Groups[1].Value.Equals("register_call_name"))
                 {
-                    var name_table = load("call_name.xml", new Dictionary<long, string>().Select(kv => new serializeable_pair<long, string>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
-                    if (name_table.ContainsKey((long)s.User.Id))
-                    {
-                        name_table.Remove((long)s.User.Id);
-                    }
-                    var name = match.Groups[2].Value.Substring(1);
-                    name_table.Add((long)s.User.Id, name);
-                    save("call_name.xml", name_table.Select(kv => new serializeable_pair<long, string>(kv)).ToList());
-                    tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register your name : " + name, in_reply_to_status_id => s.Id);
+                    register_call_name(s, match);
                 }
                 else if (match.Groups[1].Value.Equals("register_pre_developer"))
                 {
-                    var random = new Random(DateTime.Now.Millisecond);
-                    var sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider();
-                    var key1 = BitConverter.ToString(sha1.ComputeHash(System.Text.Encoding.UTF8.GetBytes(random.Next().ToString()))).Replace("-", "");
-                    var key2 = BitConverter.ToString(sha1.ComputeHash(System.Text.Encoding.UTF8.GetBytes(random.Next().ToString()))).Replace("-", "");
-                    var developer_table = load("pre_developer.xml", new Dictionary<serializeable_pair<string, string>, long>().Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
-                    if (developer_table.ContainsValue((long)s.User.Id))
-                    {
-                        developer_table = developer_table.Where(kv => kv.Value != (long)s.User.Id).ToDictionary(kv => kv.Key, kv => kv.Value);
-                    }
-                    developer_table.Add(new serializeable_pair<string, string>(new KeyValuePair<string, string>(key1, key2)), (long)s.User.Id);
-                    save("pre_developer.xml", developer_table.Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList());
-                    tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register your pre developer code : " + key1, in_reply_to_status_id => s.Id);
-                    tokens.Statuses.Update(status => "@FriendOfCpper [command] ignore " + s.User.ScreenName + "'s pre developer key : " + key2, in_reply_to_status_id => s.Id);
+                    register_pre_developer(s);
                 }
                 else if (match.Groups[1].Value.Equals("register_developer") && s.User.Id == tokens.Users.Show(screen_name => "FriendOfCpper").Id)
                 {
-                    var developer_table = load("pre_developer.xml", new Dictionary<serializeable_pair<string, string>, long>().Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
-                    var reg = new Regex(@" ([0-9a-zA-Z]+) ([0-9a-zA-Z]+)");
-                    var m = reg.Match(match.Groups[2].Value);
-                    if (m.Success)
-                    {
-                        var key = new serializeable_pair<string, string>(new KeyValuePair<string, string>(m.Groups[1].Value, m.Groups[2].Value));
-                        if (developer_table.ContainsKey(key))
-                        {
-                            var new_developer = developer_table[key];
-                            developer_table.Remove(key);
-                            save("pre_developer.xml", developer_table.Select(kv=>new serializeable_pair<serializeable_pair<string,string>,long>()).ToList());
-                            var new_developer_table = load("developer.xml", new HashSet<long>());
-                            new_developer_table.Add(new_developer);
-                            save("developer.xml", new_developer_table);
-                            tokens.Statuses.Update(status => "@" + tokens.Users.Show(user_id => new_developer).ScreenName + " registered with the developers you", in_reply_to_status_id => s.Id);
-                        }
-                    }
+                    register_developer(s, match);
                 }
             }
+        }
+
+        private static void register_developer(Status s, Match match)
+        {
+
+            var developer_table = load("pre_developer.xml", new Dictionary<serializeable_pair<string, string>, long>().Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+            var reg = new Regex(@" ([0-9a-zA-Z]+) ([0-9a-zA-Z]+)");
+            var m = reg.Match(match.Groups[2].Value);
+            if (m.Success)
+            {
+                var key = new serializeable_pair<string, string>(new KeyValuePair<string, string>(m.Groups[1].Value, m.Groups[2].Value));
+                if (developer_table.ContainsKey(key))
+                {
+                    var new_developer = developer_table[key];
+                    developer_table.Remove(key);
+                    save("pre_developer.xml", developer_table.Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>()).ToList());
+                    var new_developer_table = load("developer.xml", new HashSet<long>());
+                    new_developer_table.Add(new_developer);
+                    save("developer.xml", new_developer_table);
+                    tokens.Statuses.Update(status => "@" + tokens.Users.Show(user_id => new_developer).ScreenName + " registered with the developers you", in_reply_to_status_id => s.Id);
+                }
+            }
+        }
+
+        private static void register_pre_developer(Status s)
+        {
+
+            var random = new Random(DateTime.Now.Millisecond);
+            var sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider();
+            var key1 = BitConverter.ToString(sha1.ComputeHash(System.Text.Encoding.UTF8.GetBytes(random.Next().ToString()))).Replace("-", "");
+            var key2 = BitConverter.ToString(sha1.ComputeHash(System.Text.Encoding.UTF8.GetBytes(random.Next().ToString()))).Replace("-", "");
+            var developer_table = load("pre_developer.xml", new Dictionary<serializeable_pair<string, string>, long>().Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+            if (developer_table.ContainsValue((long)s.User.Id))
+            {
+                developer_table = developer_table.Where(kv => kv.Value != (long)s.User.Id).ToDictionary(kv => kv.Key, kv => kv.Value);
+            }
+            developer_table.Add(new serializeable_pair<string, string>(new KeyValuePair<string, string>(key1, key2)), (long)s.User.Id);
+            save("pre_developer.xml", developer_table.Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList());
+            tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register your pre developer code : " + key1, in_reply_to_status_id => s.Id);
+            tokens.Statuses.Update(status => "@FriendOfCpper [command] ignore " + s.User.ScreenName + "'s pre developer key : " + key2, in_reply_to_status_id => s.Id);
+        }
+
+        private static void register_call_name(Status s, Match match)
+        {
+
+            var name_table = load("call_name.xml", new Dictionary<long, string>().Select(kv => new serializeable_pair<long, string>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+            if (name_table.ContainsKey((long)s.User.Id))
+            {
+                name_table.Remove((long)s.User.Id);
+            }
+            var name = match.Groups[2].Value.Substring(1);
+            name_table.Add((long)s.User.Id, name);
+            save("call_name.xml", name_table.Select(kv => new serializeable_pair<long, string>(kv)).ToList());
+            tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register your name : " + name, in_reply_to_status_id => s.Id);
         }
         private static void parse(Status s)
         {
@@ -133,32 +151,7 @@ namespace DaringChildhoodFriendBot
                         }
                         else
                         {
-                            var reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
-                            string tweet = "@" + s.User.ScreenName + " ";
-                            var name_table = new Dictionary<long, string>();
-                            name_table = load("call_name.xml", name_table.Select(kv => new serializeable_pair<long, string>(kv)).ToArray()).ToDictionary(kv => kv.key, kv => kv.value);
-                            foreach (var set in reply_tweet_table)
-                            {
-                                if (Regex.IsMatch(s.Text, set[0]))
-                                {
-                                    var now = DateTime.Now;
-                                    var add_str = set[1];
-                                    add_str = add_str.Replace("#{挨拶}", Greeting[time_table[now.Hour]]);
-                                    if (s.User.Id != null && name_table.ContainsKey((long)s.User.Id))
-                                    {
-                                        add_str = add_str.Replace("#{名前}", name_table[(long)s.User.Id]);
-                                    }
-                                    else
-                                    {
-                                        add_str = add_str.Replace("#{名前}", s.User.ScreenName);
-                                    }
-                                    tweet += add_str;
-                                    break;
-                                }
-                            }
-                            Console.WriteLine("Tweet.");
-                            Console.WriteLine(tweet);
-                            tokens.Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
+                            do_reply(s);
                         }
                     }
                 }
@@ -167,6 +160,42 @@ namespace DaringChildhoodFriendBot
                     Console.WriteLine(e);
                 }
             }
+        }
+
+        private static void do_reply(Status s)
+        {
+
+            var reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
+            string tweet = "@" + s.User.ScreenName + " ";
+            var name_table = new Dictionary<long, string>();
+            name_table = load("call_name.xml", name_table.Select(kv => new serializeable_pair<long, string>(kv)).ToArray()).ToDictionary(kv => kv.key, kv => kv.value);
+            foreach (var set in reply_tweet_table)
+            {
+                if (Regex.IsMatch(s.Text, set[0]))
+                {
+                    var add_str = replace_escape(s, name_table, DateTime.Now, set[1]);
+                    tweet += add_str;
+                    break;
+                }
+            }
+            Console.WriteLine("Tweet.");
+            Console.WriteLine(tweet);
+            tokens.Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
+        }
+
+        private static string replace_escape(Status s, Dictionary<long, string> name_table, DateTime now, string add_str)
+        {
+
+            add_str = add_str.Replace("#{挨拶}", Greeting[time_table[now.Hour]]);
+            if (s.User.Id != null && name_table.ContainsKey((long)s.User.Id))
+            {
+                add_str = add_str.Replace("#{名前}", name_table[(long)s.User.Id]);
+            }
+            else
+            {
+                add_str = add_str.Replace("#{名前}", s.User.ScreenName);
+            }
+            return add_str;
         }
         private static void reply(Status s)
         {
@@ -275,7 +304,7 @@ namespace DaringChildhoodFriendBot
             time_traits.Noon,//13
             time_traits.Noon,//14
             time_traits.Noon,//15
-            time_traits.Evening,//16
+            time_traits.Noon,//16
             time_traits.Evening,//17
             time_traits.Evening,//18
             time_traits.Night,//19
