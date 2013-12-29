@@ -292,8 +292,8 @@ namespace DaringChildhoodFriendBot
             time_traits.Night,//1
             time_traits.Night,//2
             time_traits.Night,//3
-            time_traits.Morning,//4
-            time_traits.Morning,//5
+            time_traits.Night,//4
+            time_traits.Night,//5
             time_traits.Morning,//6     
             time_traits.Morning,//7
             time_traits.Morning,//8
