@@ -119,7 +119,7 @@ namespace DaringChildhoodFriendBot
             developer_table.Add(new serializeable_pair<string, string>(new KeyValuePair<string, string>(key1, key2)), (long)s.User.Id);
             save("pre_developer.xml", developer_table.Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList());
             tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register your pre developer code : " + key1, in_reply_to_status_id => s.Id);
-            tokens.Statuses.Update(status => "@FriendOfCpper [command] ignore " + s.User.ScreenName + "'s pre developer key : " + key2, in_reply_to_status_id => s.Id);
+            tokens.Statuses.Update(status => "@FriendOfCpper [command] developer_key : " + s.User.ScreenName + "'s pre developer key : " + key2, in_reply_to_status_id => s.Id);
         }
 
         private static void register_call_name(Status s, Match match)
@@ -141,7 +141,7 @@ namespace DaringChildhoodFriendBot
             {
                 try
                 {
-                    if (s.RetweetCount == 0)
+                    if (!(bool)s.IsRetweeted)
                     {
                         var regex = new Regex(@"^@FriendOfCpper \[command\] (.*)$");
                         var match = regex.Match(s.Text);
