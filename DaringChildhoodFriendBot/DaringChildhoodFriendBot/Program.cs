@@ -264,9 +264,10 @@ namespace DaringChildhoodFriendBot
                 .Aggregate(new List<string>(), (a, l) => a.Concat(l).ToList())
                 .Select(str => tweet + replace_escape(s, name_table, DateTime.Now, str))
                 .ToList();
+            var tw = reply_result[new Random(DateTime.Now.Millisecond).Next() % reply_result.Count()];
             Console.WriteLine("Tweet.");
-            Console.WriteLine(tweet);
-            tokens.Statuses.Update(status => reply_result[new Random(DateTime.Now.Millisecond).Next()%reply_result.Count()], in_reply_to_status_id => s.Id);
+            Console.WriteLine(tw);
+            tokens.Statuses.Update(status => tw, in_reply_to_status_id => s.Id);
         }
 
         private static string replace_escape(Status s, Dictionary<long, string> name_table, DateTime now, string add_str)
