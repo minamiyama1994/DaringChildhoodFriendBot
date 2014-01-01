@@ -67,41 +67,124 @@ namespace DaringChildhoodFriendBot
             var match = regex.Match(command);
             if (match.Success)
             {
-                if (match.Groups[1].Value.Equals("register_call_name"))
+                if (match.Groups[1].Value.Equals("register_call_name") && (long)s.User.Id != (long)tokens.Account.VerifyCredentials().Id)
                 {
                     register_call_name(s, match);
                 }
-                else if (match.Groups[1].Value.Equals("register_pre_developer"))
+                else if (match.Groups[1].Value.Equals("register_pre_developer") && (long)s.User.Id != (long)tokens.Account.VerifyCredentials().Id)
                 {
                     register_pre_developer(s);
                 }
-                else if (match.Groups[1].Value.Equals("register_developer") && s.User.Id == tokens.Users.Show(screen_name => "FriendOfCpper").Id)
+                else if (match.Groups[1].Value.Equals("register_developer") && (long)s.User.Id == (long)tokens.Account.VerifyCredentials().Id)
                 {
                     register_developer(s, match);
                 }
+                else if (match.Groups[1].Value.Equals("register_regex") && (long)s.User.Id != (long)tokens.Account.VerifyCredentials().Id)
+                {
+                    register_regex(s, match);
+                }
+                else if (match.Groups[1].Value.Equals("register_reply") && (long)s.User.Id != (long)tokens.Account.VerifyCredentials().Id)
+                {
+                    register_reply(s, match);
+                }
+            }
+        }
+        private static bool valid_user(User user)
+        {
+            return load("developer.xml", new HashSet<long>()).Contains((long)user.Id);
+        }
+        private static void register_reply(Status s, Match match)
+        {
+            if (!valid_user(s.User))
+            {
+                return;
+            }
+            var regex_table = load("regex.xml", new Dictionary<int, string>().Select(kv => new serializeable_pair<int, string>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+            var reg = new Regex(@"^ ([0-9]+) (.*)$");
+            var m = reg.Match(match.Groups[2].Value);
+            if (!m.Success)
+            {
+                return;
+            }
+            var key = int.Parse(m.Groups[1].Value);
+            var val = m.Groups[2].Value;
+            var reply_table = load("reply.xml", new Dictionary<int, HashSet<string>>().Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+            if (regex_table.ContainsKey(key))
+            {
+                if ( reply_table[key].Contains(val))
+                {
+                    tokens.Statuses.Update(status => ( "@" + s.User.ScreenName + " reply is registered. reguler expression ID \"" + key.ToString() + "\" reply : " + val).Substring(0,149), in_reply_to_status_id => s.Id);
+                }
+                else
+                {
+                    reply_table[key].Add(val);
+                    save("reply.xml", reply_table.Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList());
+                    tokens.Statuses.Update(status => ("@" + s.User.ScreenName + " register reply. reguler expression ID \"" + key.ToString() + "\" reply : " + val).Substring(0, 149), in_reply_to_status_id => s.Id);
+                }
+            }
+            else
+            {
+                tokens.Statuses.Update(status => "@" + s.User.ScreenName + " reguler expression ID \"" + key.ToString() + "\" is not registered. Please register using the ID that was registered using the command register_regex.", in_reply_to_status_id => s.Id);
+            }
+        }
+        private static void register_regex(Status s, Match match)
+        {
+            if (!valid_user(s.User))
+            {
+                return;
+            }
+            var regex_table = load("regex.xml", new Dictionary<int, string>().Select(kv => new serializeable_pair<int, string>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+            var reg = new Regex(@"^ (.*)$");
+            var m = reg.Match(match.Groups[2].Value);
+            if (!m.Success)
+            {
+                return;
+            }
+            var val = m.Groups[1].Value;
+            if (regex_table.Any(kv => kv.Value.Equals(val)))
+            {
+                var exist_regex = regex_table.Where(kv => kv.Value.Equals(val)).First();
+                tokens.Statuses.Update(status => ("@" + s.User.ScreenName + " already register reguler expression. regex ID is " + exist_regex.Key.ToString() + "\" " + val).Substring(0, 149), in_reply_to_status_id => s.Id);
+            }
+            else
+            {
+                var random = new Random(DateTime.Now.Millisecond);
+                int key;
+                do
+                {
+                    key = random.Next();
+                }
+                while (regex_table.ContainsKey(key));
+                regex_table.Add(key, val);
+                save("regex.xml", regex_table.Select(kv => new serializeable_pair<int, string>(kv)).ToList());
+                var reply_table = load("reply.xml", new Dictionary<int, HashSet<string>>().Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+                reply_table.Add(key, new HashSet<string>());
+                save("reply.xml", reply_table.Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList());
+                tokens.Statuses.Update(status => ("@" + s.User.ScreenName + " register reguler expression. regex ID is " + key.ToString() + "\" " + val).Substring(0, 149), in_reply_to_status_id => s.Id);
             }
         }
 
         private static void register_developer(Status s, Match match)
         {
-
             var developer_table = load("pre_developer.xml", new Dictionary<serializeable_pair<string, string>, long>().Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
             var reg = new Regex(@" ([0-9a-zA-Z]+) ([0-9a-zA-Z]+)");
             var m = reg.Match(match.Groups[2].Value);
-            if (m.Success)
+            if (!m.Success)
             {
-                var key = new serializeable_pair<string, string>(new KeyValuePair<string, string>(m.Groups[1].Value, m.Groups[2].Value));
-                if (developer_table.ContainsKey(key))
-                {
-                    var new_developer = developer_table[key];
-                    developer_table.Remove(key);
-                    save("pre_developer.xml", developer_table.Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>()).ToList());
-                    var new_developer_table = load("developer.xml", new HashSet<long>());
-                    new_developer_table.Add(new_developer);
-                    save("developer.xml", new_developer_table);
-                    tokens.Statuses.Update(status => "@" + tokens.Users.Show(user_id => new_developer).ScreenName + " registered with the developers you", in_reply_to_status_id => s.Id);
-                }
+                return;
             }
+            var key = new serializeable_pair<string, string>(new KeyValuePair<string, string>(m.Groups[1].Value, m.Groups[2].Value));
+            if (!developer_table.ContainsKey(key))
+            {
+                return;
+            }
+            var new_developer = developer_table[key];
+            developer_table.Remove(key);
+            save("pre_developer.xml", developer_table.Select(kv => new serializeable_pair<serializeable_pair<string, string>, long>()).ToList());
+            var new_developer_table = load("developer.xml", new HashSet<long>());
+            new_developer_table.Add(new_developer);
+            save("developer.xml", new_developer_table);
+            tokens.Statuses.Update(status => "@" + tokens.Users.Show(user_id => new_developer).ScreenName + " registered with the developers you", in_reply_to_status_id => s.Id);
         }
 
         private static void register_pre_developer(Status s)
@@ -141,18 +224,19 @@ namespace DaringChildhoodFriendBot
             {
                 try
                 {
-                    if (!(bool)s.IsRetweeted)
+                    if (s.Text.StartsWith("RT "))
                     {
-                        var regex = new Regex(@"^@FriendOfCpper \[command\] (.*)$");
-                        var match = regex.Match(s.Text);
-                        if (match.Success)
-                        {
-                            exec_command(s, match.Groups[1].Value);
-                        }
-                        else
-                        {
-                            do_reply(s);
-                        }
+                        return;
+                    }
+                    var regex = new Regex(@"^@FriendOfCpper \[command\] (.*)$");
+                    var match = regex.Match(s.Text);
+                    if (match.Success)
+                    {
+                        exec_command(s, match.Groups[1].Value);
+                    }
+                    else
+                    {
+                        do_reply(s);
                     }
                 }
                 catch (Exception e)
@@ -165,28 +249,36 @@ namespace DaringChildhoodFriendBot
         private static void do_reply(Status s)
         {
 
-            var reply_tweet_table = load("reply_tweet.xml", new List<List<string>>());
             string tweet = "@" + s.User.ScreenName + " ";
             var name_table = new Dictionary<long, string>();
             name_table = load("call_name.xml", name_table.Select(kv => new serializeable_pair<long, string>(kv)).ToArray()).ToDictionary(kv => kv.key, kv => kv.value);
-            foreach (var set in reply_tweet_table)
-            {
-                if (Regex.IsMatch(s.Text, set[0]))
-                {
-                    var add_str = replace_escape(s, name_table, DateTime.Now, set[1]);
-                    tweet += add_str;
-                    break;
-                }
-            }
+            var regex_table = load("regex.xml", new Dictionary<int, string>().Select(kv => new serializeable_pair<int, string>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
+            var reply_table =
+                load("reply.xml", new Dictionary<int, HashSet<string>>().Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList())
+                .ToDictionary(kv=>kv.key,kv=>kv.value);
+            var reply_result =
+                regex_table
+                .Select(kv => new KeyValuePair<int, Regex>(kv.Key, new Regex(kv.Value)))
+                .Where(kv => kv.Value.IsMatch(s.Text))
+                .Select(kv => reply_table[kv.Key])
+                .Aggregate(new List<string>(), (a, l) => a.Concat(l).ToList())
+                .Select(str => tweet + replace_escape(s, name_table, DateTime.Now, str))
+                .ToList();
             Console.WriteLine("Tweet.");
             Console.WriteLine(tweet);
-            tokens.Statuses.Update(status => tweet, in_reply_to_status_id => s.Id);
+            tokens.Statuses.Update(status => reply_result[new Random(DateTime.Now.Millisecond).Next()%reply_result.Count()], in_reply_to_status_id => s.Id);
         }
 
         private static string replace_escape(Status s, Dictionary<long, string> name_table, DateTime now, string add_str)
         {
 
             add_str = add_str.Replace("#{挨拶}", Greeting[time_table[now.Hour]]);
+            add_str = add_str.Replace("#{年}", now.Year.ToString());
+            add_str = add_str.Replace("#{月}", now.Month.ToString());
+            add_str = add_str.Replace("#{日}", now.Day.ToString());
+            add_str = add_str.Replace("#{時}", now.Hour.ToString());
+            add_str = add_str.Replace("#{分}", now.Minute.ToString());
+            add_str = add_str.Replace("#{秒}", now.Second.ToString());
             if (s.User.Id != null && name_table.ContainsKey((long)s.User.Id))
             {
                 add_str = add_str.Replace("#{名前}", name_table[(long)s.User.Id]);
@@ -201,6 +293,7 @@ namespace DaringChildhoodFriendBot
         {
             try
             {
+                Console.WriteLine(s.Text);
                 parse(s);
             }
             catch (Exception e)
@@ -331,6 +424,8 @@ namespace DaringChildhoodFriendBot
         }
         private static void Main(string[] args)
         {
+            var _1 = tokens;
+            var _2 = Greeting;
             Thread rt = new Thread(new ThreadStart(reply_thread));
             tweet_thread();
             rt.Start();
