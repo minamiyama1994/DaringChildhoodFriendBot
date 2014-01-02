@@ -113,13 +113,13 @@ namespace DaringChildhoodFriendBot
             {
                 if ( reply_table[key].Contains(val))
                 {
-                    tokens.Statuses.Update(status => ( "@" + s.User.ScreenName + " reply is registered. reguler expression ID \"" + key.ToString() + "\" reply : " + val).Substring(0,149), in_reply_to_status_id => s.Id);
+                    tokens.Statuses.Update(status => "@" + s.User.ScreenName + " reply is registered. reguler expression ID \"" + key.ToString() + "\" reply : " + val, in_reply_to_status_id => s.Id);
                 }
                 else
                 {
                     reply_table[key].Add(val);
                     save("reply.xml", reply_table.Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList());
-                    tokens.Statuses.Update(status => ("@" + s.User.ScreenName + " register reply. reguler expression ID \"" + key.ToString() + "\" reply : " + val).Substring(0, 149), in_reply_to_status_id => s.Id);
+                    tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register reply. reguler expression ID \"" + key.ToString() + "\" reply : " + val, in_reply_to_status_id => s.Id);
                 }
             }
             else
@@ -144,7 +144,7 @@ namespace DaringChildhoodFriendBot
             if (regex_table.Any(kv => kv.Value.Equals(val)))
             {
                 var exist_regex = regex_table.Where(kv => kv.Value.Equals(val)).First();
-                tokens.Statuses.Update(status => ("@" + s.User.ScreenName + " already register reguler expression. regex ID is " + exist_regex.Key.ToString() + "\" " + val).Substring(0, 149), in_reply_to_status_id => s.Id);
+                tokens.Statuses.Update(status => "@" + s.User.ScreenName + " already register reguler expression. regex ID is " + exist_regex.Key.ToString() + " : " + val, in_reply_to_status_id => s.Id);
             }
             else
             {
@@ -160,7 +160,7 @@ namespace DaringChildhoodFriendBot
                 var reply_table = load("reply.xml", new Dictionary<int, HashSet<string>>().Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
                 reply_table.Add(key, new HashSet<string>());
                 save("reply.xml", reply_table.Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList());
-                tokens.Statuses.Update(status => ("@" + s.User.ScreenName + " register reguler expression. regex ID is " + key.ToString() + "\" " + val).Substring(0, 149), in_reply_to_status_id => s.Id);
+                tokens.Statuses.Update(status => "@" + s.User.ScreenName + " register reguler expression. regex ID is " + key.ToString() + " : " + val, in_reply_to_status_id => s.Id);
             }
         }
 
@@ -264,10 +264,20 @@ namespace DaringChildhoodFriendBot
                 .Aggregate(new List<string>(), (a, l) => a.Concat(l).ToList())
                 .Select(str => tweet + replace_escape(s, name_table, DateTime.Now, str))
                 .ToList();
-            var tw = reply_result[new Random(DateTime.Now.Millisecond).Next() % reply_result.Count()];
-            Console.WriteLine("Tweet.");
-            Console.WriteLine(tw);
-            tokens.Statuses.Update(status => tw, in_reply_to_status_id => s.Id);
+            while (true)
+            {
+                try
+                {
+                    var tw = reply_result[new Random(DateTime.Now.Millisecond).Next() % reply_result.Count()];
+                    Console.WriteLine("Tweet.");
+                    Console.WriteLine(tw);
+                    tokens.Statuses.Update(status => tw, in_reply_to_status_id => s.Id);
+                    break;
+                }
+                catch (Exception)
+                {
+                }
+            }
         }
 
         private static string replace_escape(Status s, Dictionary<long, string> name_table, DateTime now, string add_str)
