@@ -111,7 +111,7 @@ namespace DaringChildhoodFriendBot
             var reply_table = load("reply.xml", new Dictionary<int, HashSet<string>>().Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
             if (regex_table.ContainsKey(key))
             {
-                if ( reply_table[key].Contains(val))
+                if (reply_table[key].Contains(val))
                 {
                     tokens.Statuses.Update(status => "@" + s.User.ScreenName + " reply is registered. reguler expression ID \"" + key.ToString() + "\" reply : " + val, in_reply_to_status_id => s.Id);
                 }
@@ -255,7 +255,7 @@ namespace DaringChildhoodFriendBot
             var regex_table = load("regex.xml", new Dictionary<int, string>().Select(kv => new serializeable_pair<int, string>(kv)).ToList()).ToDictionary(kv => kv.key, kv => kv.value);
             var reply_table =
                 load("reply.xml", new Dictionary<int, HashSet<string>>().Select(kv => new serializeable_pair<int, HashSet<string>>(kv)).ToList())
-                .ToDictionary(kv=>kv.key,kv=>kv.value);
+                .ToDictionary(kv => kv.key, kv => kv.value);
             var reply_result =
                 regex_table
                 .Select(kv => new KeyValuePair<int, Regex>(kv.Key, new Regex(kv.Value)))
