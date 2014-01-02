@@ -264,18 +264,26 @@ namespace DaringChildhoodFriendBot
                 .Aggregate(new List<string>(), (a, l) => a.Concat(l).ToList())
                 .Select(str => tweet + replace_escape(s, name_table, DateTime.Now, str))
                 .ToList();
+            var check = new bool[reply_result.Count()].Select(b => true).ToArray();
             while (true)
             {
                 try
                 {
-                    var tw = reply_result[new Random(DateTime.Now.Millisecond).Next() % reply_result.Count()];
+                    var index = new Random(DateTime.Now.Millisecond).Next() % reply_result.Count();
+                    check[index] = false;
+                    var tw = reply_result[index];
                     Console.WriteLine("Tweet.");
                     Console.WriteLine(tw);
                     tokens.Statuses.Update(status => tw, in_reply_to_status_id => s.Id);
+                    check[index] = true;
                     break;
                 }
                 catch (Exception)
                 {
+                    if (!check.Any(b=>b))
+                    {
+                        break;
+                    }
                 }
             }
         }
