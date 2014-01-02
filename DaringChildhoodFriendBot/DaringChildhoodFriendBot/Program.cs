@@ -264,8 +264,8 @@ namespace DaringChildhoodFriendBot
                 .Aggregate(new List<string>(), (a, l) => a.Concat(l).ToList())
                 .Select(str => tweet + replace_escape(s, name_table, DateTime.Now, str))
                 .ToList();
-            var check = new bool[reply_result.Count()].Select(b => true).ToArray();
-            while (true)
+            var check = new List<bool>(reply_result.Select(_ => true));
+            while (check.Any(b => b))
             {
                 try
                 {
@@ -280,10 +280,6 @@ namespace DaringChildhoodFriendBot
                 }
                 catch (Exception)
                 {
-                    if (!check.Any(b=>b))
-                    {
-                        break;
-                    }
                 }
             }
         }
